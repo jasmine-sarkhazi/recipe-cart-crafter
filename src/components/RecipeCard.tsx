@@ -1,6 +1,6 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Utensils } from "lucide-react";
+import { ShoppingCart, Utensils, CalendarPlus } from "lucide-react";
 
 interface RecipeCardProps {
   id: string;
@@ -10,9 +10,10 @@ interface RecipeCardProps {
   ingredientCount: number;
   onViewDetails: (id: string) => void;
   onAddToList: (id: string) => void;
+  onSchedule: (id: string) => void;
 }
 
-const RecipeCard = ({ id, name, description, imageUrl, ingredientCount, onViewDetails, onAddToList }: RecipeCardProps) => {
+const RecipeCard = ({ id, name, description, imageUrl, ingredientCount, onViewDetails, onAddToList, onSchedule }: RecipeCardProps) => {
   return (
     <Card className="group overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
       <div
@@ -33,9 +34,11 @@ const RecipeCard = ({ id, name, description, imageUrl, ingredientCount, onViewDe
         <Button variant="outline" size="sm" className="flex-1" onClick={() => onViewDetails(id)}>
           View Recipe
         </Button>
-        <Button size="sm" className="flex-1 gap-1" onClick={() => onAddToList(id)}>
+        <Button size="sm" className="gap-1" onClick={() => onAddToList(id)}>
           <ShoppingCart className="h-3.5 w-3.5" />
-          Add All
+        </Button>
+        <Button variant="secondary" size="sm" className="gap-1" onClick={() => onSchedule(id)}>
+          <CalendarPlus className="h-3.5 w-3.5" />
         </Button>
       </CardFooter>
     </Card>

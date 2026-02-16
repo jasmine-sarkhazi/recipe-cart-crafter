@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      meal_plan: {
+        Row: {
+          created_at: string
+          day_of_week: string
+          id: string
+          meal_type: string
+          recipe_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: string
+          id?: string
+          meal_type?: string
+          recipe_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string
+          id?: string
+          meal_type?: string
+          recipe_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_ingredients: {
         Row: {
           default_quantity: number | null
