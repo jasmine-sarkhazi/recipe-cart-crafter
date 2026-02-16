@@ -95,8 +95,8 @@ const IngredientBank = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
-        <div className="flex items-center justify-between mb-6">
+      <main className="container mx-auto px-4 py-8 pb-20 md:pb-8 max-w-5xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <h1 className="text-3xl font-serif">Ingredient Bank</h1>
           <div className="flex gap-2">
             <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />

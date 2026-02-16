@@ -94,7 +94,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
+      <main className="container mx-auto px-4 py-8 pb-20 md:pb-8 max-w-3xl">
         <section className="mb-8 text-center">
           <h1 className="text-4xl md:text-5xl font-serif mb-1">{format(new Date(), "EEEE")}</h1>
           <p className="text-muted-foreground">{format(new Date(), "MMMM d, yyyy")}</p>

@@ -73,7 +73,7 @@ const Shopping = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      <main className="container mx-auto px-4 py-8 pb-20 md:pb-8 max-w-2xl">
         <h1 className="text-3xl font-serif mb-6">Shopping List</h1>
 
         <div className="mb-6 flex gap-2">

@@ -115,7 +115,7 @@ const MealPlan = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-20 md:pb-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-serif">Meal Plan</h1>
           <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ const MealPlan = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-7">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-7">
           {DAYS.map((day) => {
             const dayMeals = meals.filter((m) => m.day_of_week === day);
             return (
