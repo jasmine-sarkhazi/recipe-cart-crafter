@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Search, Plus, Loader2, Utensils } from "lucide-react";
+import { Search, Plus, Loader2, Utensils, ExternalLink } from "lucide-react";
 
 interface SearchIngredient {
   ingredient_name: string;
@@ -18,6 +18,7 @@ interface SearchRecipe {
   name: string;
   description: string;
   instructions: string;
+  source_url?: string;
   ingredients: SearchIngredient[];
 }
 
@@ -42,15 +43,18 @@ const SearchRecipes = () => {
   const addToLibrary = async (recipe: SearchRecipe, index: number) => {
     setAddingIndex(index);
     try {
-      // Insert recipe
       const { data: newRecipe, error: recipeError } = await supabase
         .from("recipes")
-        .insert({ name: recipe.name, description: recipe.description, instructions: recipe.instructions })
+        .insert({
+          name: recipe.name,
+          description: recipe.description,
+          instructions: recipe.instructions,
+          source_url: recipe.source_url || null,
+        } as any)
         .select("id")
         .single();
       if (recipeError) throw recipeError;
 
-      // Insert ingredients
       if (recipe.ingredients?.length) {
         const ingredientRows = recipe.ingredients.map((ing) => ({
           recipe_id: newRecipe.id,
@@ -81,8 +85,8 @@ const SearchRecipes = () => {
       <Navbar />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <section className="mb-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-serif mb-2">Search Recipes</h1>
-          <p className="text-muted-foreground">Find recipes from around the web and add them to your library.</p>
+          <h1 className="text-3xl md:text-4xl font-serif mb-2">Find Recipes</h1>
+          <p className="text-muted-foreground">Search for recipes and add them to your library.</p>
         </section>
 
         <form onSubmit={handleSearch} className="mb-8 flex gap-2 max-w-xl mx-auto">
@@ -114,10 +118,20 @@ const SearchRecipes = () => {
                 </CardHeader>
                 <CardContent className="pb-3 flex-1">
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{recipe.description}</p>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                     <Utensils className="h-3 w-3" />
                     {recipe.ingredients?.length ?? 0} ingredients
                   </div>
+                  {recipe.source_url && (
+                    <a
+                      href={recipe.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" /> Source
+                    </a>
+                  )}
                 </CardContent>
                 <CardFooter>
                   <Button
