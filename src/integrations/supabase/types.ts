@@ -32,6 +32,7 @@ export type Database = {
           total_fat: number | null
           total_sugars: number | null
           trans_fat: number | null
+          user_id: string | null
         }
         Insert: {
           brand?: string | null
@@ -50,6 +51,7 @@ export type Database = {
           total_fat?: number | null
           total_sugars?: number | null
           trans_fat?: number | null
+          user_id?: string | null
         }
         Update: {
           brand?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           total_fat?: number | null
           total_sugars?: number | null
           trans_fat?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -78,6 +81,7 @@ export type Database = {
           id: string
           meal_type: string
           recipe_id: string
+          user_id: string | null
           week_start: string
         }
         Insert: {
@@ -86,6 +90,7 @@ export type Database = {
           id?: string
           meal_type?: string
           recipe_id: string
+          user_id?: string | null
           week_start: string
         }
         Update: {
@@ -94,6 +99,7 @@ export type Database = {
           id?: string
           meal_type?: string
           recipe_id?: string
+          user_id?: string | null
           week_start?: string
         }
         Relationships: [
@@ -113,6 +119,7 @@ export type Database = {
           id: string
           ingredient_name: string
           recipe_id: string
+          user_id: string | null
         }
         Insert: {
           default_quantity?: number | null
@@ -120,6 +127,7 @@ export type Database = {
           id?: string
           ingredient_name: string
           recipe_id: string
+          user_id?: string | null
         }
         Update: {
           default_quantity?: number | null
@@ -127,6 +135,7 @@ export type Database = {
           id?: string
           ingredient_name?: string
           recipe_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -147,6 +156,7 @@ export type Database = {
           instructions: string | null
           name: string
           source_url: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -156,6 +166,7 @@ export type Database = {
           instructions?: string | null
           name: string
           source_url?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -165,6 +176,7 @@ export type Database = {
           instructions?: string | null
           name?: string
           source_url?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -177,6 +189,7 @@ export type Database = {
           quantity: number | null
           store: string | null
           unit: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -186,6 +199,7 @@ export type Database = {
           quantity?: number | null
           store?: string | null
           unit?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -195,6 +209,7 @@ export type Database = {
           quantity?: number | null
           store?: string | null
           unit?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -203,16 +218,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          user_id?: string | null
         }
         Relationships: []
       }

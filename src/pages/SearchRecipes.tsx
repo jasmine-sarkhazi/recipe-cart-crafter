@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -24,15 +25,14 @@ interface SearchRecipe {
 
 const SearchRecipes = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchRecipe[]>([]);
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
 
   const searchMutation = useMutation({
     mutationFn: async (searchQuery: string) => {
-      const { data, error } = await supabase.functions.invoke("search-recipes", {
-        body: { query: searchQuery },
-      });
+      const { data, error } = await supabase.functions.invoke("search-recipes", { body: { query: searchQuery } });
       if (error) throw error;
       return data.recipes as SearchRecipe[];
     },
@@ -41,6 +41,7 @@ const SearchRecipes = () => {
   });
 
   const addToLibrary = async (recipe: SearchRecipe, index: number) => {
+    if (!user) return;
     setAddingIndex(index);
     try {
       const { data: newRecipe, error: recipeError } = await supabase
@@ -50,7 +51,8 @@ const SearchRecipes = () => {
           description: recipe.description,
           instructions: recipe.instructions,
           source_url: recipe.source_url || null,
-        } as any)
+          user_id: user.id,
+        })
         .select("id")
         .single();
       if (recipeError) throw recipeError;
@@ -61,6 +63,7 @@ const SearchRecipes = () => {
           ingredient_name: ing.ingredient_name,
           default_quantity: ing.default_quantity,
           default_unit: ing.default_unit,
+          user_id: user.id,
         }));
         const { error: ingError } = await supabase.from("recipe_ingredients").insert(ingredientRows);
         if (ingError) throw ingError;
@@ -90,22 +93,15 @@ const SearchRecipes = () => {
         </section>
 
         <form onSubmit={handleSearch} className="mb-8 flex gap-2 max-w-xl mx-auto">
-          <Input
-            placeholder="Search for a recipe... e.g. Thai green curry"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="flex-1"
-          />
+          <Input placeholder="Search for a recipe... e.g. Thai green curry" value={query} onChange={(e) => setQuery(e.target.value)} className="flex-1" />
           <Button type="submit" disabled={searchMutation.isPending} className="gap-1.5">
-            {searchMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            Search
+            {searchMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Search
           </Button>
         </form>
 
         {searchMutation.isPending && (
           <div className="text-center py-12 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3" />
-            <p>Searching for recipes...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3" /><p>Searching for recipes...</p>
           </div>
         )}
 
@@ -113,38 +109,15 @@ const SearchRecipes = () => {
           <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((recipe, i) => (
               <Card key={i} className="flex flex-col">
-                <CardHeader className="pb-2">
-                  <h3 className="text-lg font-serif">{recipe.name}</h3>
-                </CardHeader>
+                <CardHeader className="pb-2"><h3 className="text-lg font-serif">{recipe.name}</h3></CardHeader>
                 <CardContent className="pb-3 flex-1">
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{recipe.description}</p>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                    <Utensils className="h-3 w-3" />
-                    {recipe.ingredients?.length ?? 0} ingredients
-                  </div>
-                  {recipe.source_url && (
-                    <a
-                      href={recipe.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      <ExternalLink className="h-3 w-3" /> Source
-                    </a>
-                  )}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1"><Utensils className="h-3 w-3" />{recipe.ingredients?.length ?? 0} ingredients</div>
+                  {recipe.source_url && <a href={recipe.source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1"><ExternalLink className="h-3 w-3" /> Source</a>}
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    className="w-full gap-1.5"
-                    onClick={() => addToLibrary(recipe, i)}
-                    disabled={addingIndex === i}
-                  >
-                    {addingIndex === i ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Plus className="h-4 w-4" />
-                    )}
-                    Add to Library
+                  <Button className="w-full gap-1.5" onClick={() => addToLibrary(recipe, i)} disabled={addingIndex === i}>
+                    {addingIndex === i ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add to Library
                   </Button>
                 </CardFooter>
               </Card>

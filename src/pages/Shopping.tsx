@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import ShoppingItem from "@/components/ShoppingItem";
@@ -11,6 +12,7 @@ import { Plus } from "lucide-react";
 
 const Shopping = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [newItem, setNewItem] = useState("");
   const [groupByStore, setGroupByStore] = useState(false);
 
@@ -49,8 +51,8 @@ const Shopping = () => {
   });
 
   const addItem = async () => {
-    if (!newItem.trim()) return;
-    const { error } = await supabase.from("shopping_list").insert({ ingredient_name: newItem.trim() });
+    if (!newItem.trim() || !user) return;
+    const { error } = await supabase.from("shopping_list").insert({ ingredient_name: newItem.trim(), user_id: user.id });
     if (error) {
       toast({ title: "Error", description: "Failed to add item", variant: "destructive" });
       return;
