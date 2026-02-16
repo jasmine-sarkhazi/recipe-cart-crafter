@@ -1,17 +1,18 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Camera, Upload, Loader2, Trash2, Image as ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const IngredientBank = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -22,50 +23,38 @@ const IngredientBank = () => {
     queryKey: ["ingredient_bank"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("ingredient_bank" as any)
+        .from("ingredient_bank")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as any[];
+      return data;
     },
   });
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Error", description: "Please select an image file.", variant: "destructive" });
-      return;
-    }
+    if (!file.type.startsWith("image/") || !user) return;
 
     setUploading(true);
     try {
-      // Upload to storage
       const ext = file.name.split(".").pop() || "jpg";
       const fileName = `${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("nutrition-labels")
-        .upload(fileName, file);
+      const { error: uploadError } = await supabase.storage.from("nutrition-labels").upload(fileName, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("nutrition-labels")
-        .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("nutrition-labels").getPublicUrl(fileName);
       const imageUrl = urlData.publicUrl;
 
-      // Analyze with AI
       toast({ title: "Analyzing...", description: "Reading nutritional label with AI." });
-      const { data: result, error: fnError } = await supabase.functions.invoke("analyze-nutrition", {
-        body: { imageUrl },
-      });
+      const { data: result, error: fnError } = await supabase.functions.invoke("analyze-nutrition", { body: { imageUrl } });
       if (fnError) throw fnError;
 
       const nutrition = result?.nutrition;
       if (!nutrition || !nutrition.name) {
-        toast({ title: "Could not read label", description: "Try a clearer photo of the nutrition facts.", variant: "destructive" });
+        toast({ title: "Could not read label", description: "Try a clearer photo.", variant: "destructive" });
         return;
       }
 
-      // Save to ingredient bank
-      const { error: insertError } = await supabase.from("ingredient_bank" as any).insert({
+      const { error: insertError } = await supabase.from("ingredient_bank").insert({
         name: nutrition.name,
         brand: nutrition.brand || null,
         serving_size: nutrition.serving_size || null,
@@ -80,7 +69,8 @@ const IngredientBank = () => {
         total_sugars: nutrition.total_sugars ?? 0,
         protein: nutrition.protein ?? 0,
         image_url: imageUrl,
-      } as any);
+        user_id: user.id,
+      });
       if (insertError) throw insertError;
 
       queryClient.invalidateQueries({ queryKey: ["ingredient_bank"] });
@@ -94,17 +84,12 @@ const IngredientBank = () => {
   };
 
   const deleteIngredient = async (id: string) => {
-    const { error } = await supabase.from("ingredient_bank" as any).delete().eq("id", id);
+    const { error } = await supabase.from("ingredient_bank").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
       return;
     }
     queryClient.invalidateQueries({ queryKey: ["ingredient_bank"] });
-  };
-
-  const showPreview = (url: string) => {
-    setPreviewUrl(url);
-    setPreviewOpen(true);
   };
 
   return (
@@ -114,43 +99,18 @@ const IngredientBank = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-serif">Ingredient Bank</h1>
           <div className="flex gap-2">
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-            />
-            <Button
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={uploading}
-              className="gap-1.5"
-            >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-              Take Photo
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            <Button onClick={() => cameraInputRef.current?.click()} disabled={uploading} className="gap-1.5">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Take Photo
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="gap-1.5"
-            >
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
               <Upload className="h-4 w-4" /> Upload
             </Button>
           </div>
         </div>
 
-        <p className="text-muted-foreground mb-6 text-sm">
-          Snap a photo of a nutrition label to automatically extract and save nutritional info.
-        </p>
+        <p className="text-muted-foreground mb-6 text-sm">Snap a photo of a nutrition label to automatically extract and save nutritional info.</p>
 
         {uploading && (
           <Card className="mb-6">
@@ -184,37 +144,23 @@ const IngredientBank = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {ingredients.map((ing: any) => (
+                {ingredients.map((ing) => (
                   <TableRow key={ing.id}>
                     <TableCell className="font-medium">{ing.name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                      {ing.brand || "—"}
-                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{ing.brand || "—"}</TableCell>
                     <TableCell className="text-center tabular-nums">{ing.calories ?? 0}</TableCell>
                     <TableCell className="text-center tabular-nums hidden md:table-cell">{ing.protein ?? 0}g</TableCell>
                     <TableCell className="text-center tabular-nums hidden md:table-cell">{ing.total_carbs ?? 0}g</TableCell>
                     <TableCell className="text-center tabular-nums hidden md:table-cell">{ing.total_fat ?? 0}g</TableCell>
-                    <TableCell className="text-center hidden lg:table-cell text-sm text-muted-foreground">
-                      {ing.serving_size || "—"}
-                    </TableCell>
+                    <TableCell className="text-center hidden lg:table-cell text-sm text-muted-foreground">{ing.serving_size || "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {ing.image_url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => showPreview(ing.image_url)}
-                            title="View photo"
-                          >
+                          <Button variant="ghost" size="icon" onClick={() => { setPreviewUrl(ing.image_url); setPreviewOpen(true); }} title="View photo">
                             <ImageIcon className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteIngredient(ing.id)}
-                          title="Delete"
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => deleteIngredient(ing.id)} title="Delete">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -229,16 +175,8 @@ const IngredientBank = () => {
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-serif">Nutrition Label</DialogTitle>
-          </DialogHeader>
-          {previewUrl && (
-            <img
-              src={previewUrl}
-              alt="Nutrition label"
-              className="w-full rounded-md"
-            />
-          )}
+          <DialogHeader><DialogTitle className="font-serif">Nutrition Label</DialogTitle></DialogHeader>
+          {previewUrl && <img src={previewUrl} alt="Nutrition label" className="w-full rounded-md" />}
         </DialogContent>
       </Dialog>
     </div>
