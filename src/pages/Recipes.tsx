@@ -9,6 +9,64 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShoppingCart, CalendarPlus, Eye, ExternalLink } from "lucide-react";
 
+// Simple calorie lookup per unit (rough estimates)
+const CALORIE_MAP: Record<string, number> = {
+  // per cup
+  cups: 200,
+  cup: 200,
+  // per tablespoon
+  tbsp: 50,
+  tablespoon: 50,
+  tablespoons: 50,
+  // per teaspoon
+  tsp: 15,
+  teaspoon: 15,
+  teaspoons: 15,
+  // per oz
+  oz: 60,
+  ounce: 60,
+  ounces: 60,
+  // per lb
+  lb: 800,
+  lbs: 800,
+  pound: 800,
+  pounds: 800,
+  // per piece/item
+  pieces: 80,
+  piece: 80,
+  whole: 80,
+  // per can
+  can: 250,
+  cans: 250,
+  // per clove
+  clove: 5,
+  cloves: 5,
+  // per slice
+  slice: 60,
+  slices: 60,
+  // per g
+  g: 1.5,
+  gram: 1.5,
+  grams: 1.5,
+  // per ml
+  ml: 0.5,
+  // per liter
+  l: 400,
+  liter: 400,
+  liters: 400,
+};
+
+function estimateCalories(ingredients: { default_quantity: number | null; default_unit: string | null }[]): number {
+  return Math.round(
+    ingredients.reduce((total, ing) => {
+      const qty = ing.default_quantity ?? 1;
+      const unit = (ing.default_unit ?? "pieces").toLowerCase();
+      const calPerUnit = CALORIE_MAP[unit] ?? 80;
+      return total + qty * calPerUnit;
+    }, 0)
+  );
+}
+
 const Recipes = () => {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -18,7 +76,7 @@ const Recipes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("recipes")
-        .select("*, recipe_ingredients(id)")
+        .select("*, recipe_ingredients(id, default_quantity, default_unit)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -86,51 +144,54 @@ const Recipes = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead className="hidden sm:table-cell">Description</TableHead>
                   <TableHead className="text-center">Ingredients</TableHead>
+                  <TableHead className="text-center">Est. Calories</TableHead>
                   <TableHead className="hidden md:table-cell">Source</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recipes.map((recipe) => (
-                  <TableRow key={recipe.id}>
-                    <TableCell className="font-medium font-serif">{recipe.name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm max-w-[200px] truncate">
-                      {recipe.description}
-                    </TableCell>
-                    <TableCell className="text-center text-sm">
-                      {recipe.recipe_ingredients?.length ?? 0}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {(recipe as any).source_url ? (
-                        <a
-                          href={(recipe as any).source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
-                        >
-                          <ExternalLink className="h-3 w-3" /> Link
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedRecipeId(recipe.id)} title="View details">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addRecipeToList(recipe.id)} title="Add to shopping list">
-                          <ShoppingCart className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleSchedule(recipe.id)} title="Schedule">
-                          <CalendarPlus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {recipes.map((recipe) => {
+                  const cals = estimateCalories(recipe.recipe_ingredients ?? []);
+                  return (
+                    <TableRow key={recipe.id}>
+                      <TableCell className="font-medium font-serif">{recipe.name}</TableCell>
+                      <TableCell className="text-center text-sm">
+                        {recipe.recipe_ingredients?.length ?? 0}
+                      </TableCell>
+                      <TableCell className="text-center text-sm tabular-nums">
+                        ~{cals} kcal
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {(recipe as any).source_url ? (
+                          <a
+                            href={(recipe as any).source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
+                          >
+                            <ExternalLink className="h-3 w-3" /> Link
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => setSelectedRecipeId(recipe.id)} title="View details">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => addRecipeToList(recipe.id)} title="Add to shopping list">
+                            <ShoppingCart className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleSchedule(recipe.id)} title="Schedule">
+                            <CalendarPlus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
