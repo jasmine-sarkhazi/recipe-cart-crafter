@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      ingredient_bank: {
+        Row: {
+          brand: string | null
+          calories: number | null
+          cholesterol: number | null
+          created_at: string
+          dietary_fiber: number | null
+          id: string
+          image_url: string | null
+          name: string
+          protein: number | null
+          saturated_fat: number | null
+          serving_size: string | null
+          sodium: number | null
+          total_carbs: number | null
+          total_fat: number | null
+          total_sugars: number | null
+          trans_fat: number | null
+        }
+        Insert: {
+          brand?: string | null
+          calories?: number | null
+          cholesterol?: number | null
+          created_at?: string
+          dietary_fiber?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          protein?: number | null
+          saturated_fat?: number | null
+          serving_size?: string | null
+          sodium?: number | null
+          total_carbs?: number | null
+          total_fat?: number | null
+          total_sugars?: number | null
+          trans_fat?: number | null
+        }
+        Update: {
+          brand?: string | null
+          calories?: number | null
+          cholesterol?: number | null
+          created_at?: string
+          dietary_fiber?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          protein?: number | null
+          saturated_fat?: number | null
+          serving_size?: string | null
+          sodium?: number | null
+          total_carbs?: number | null
+          total_fat?: number | null
+          total_sugars?: number | null
+          trans_fat?: number | null
+        }
+        Relationships: []
+      }
       meal_plan: {
         Row: {
           created_at: string

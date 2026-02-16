@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, ChefHat, BookOpen, Calendar, Search } from "lucide-react";
+import { ShoppingCart, ChefHat, BookOpen, Calendar, Search, FlaskConical } from "lucide-react";
 
 
 const Navbar = () => {
@@ -29,6 +29,15 @@ const Navbar = () => {
           >
             <BookOpen className="h-4 w-4" />
             Recipes
+          </Link>
+          <Link
+            to="/ingredients"
+            className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
+              location.pathname === "/ingredients" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <FlaskConical className="h-4 w-4" />
+            Ingredients
           </Link>
           <Link
             to="/meal-plan"
