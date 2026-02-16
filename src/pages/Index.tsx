@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
@@ -8,6 +9,7 @@ import RecipeDetail from "@/components/RecipeDetail";
 
 const Index = () => {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { data: recipes = [] } = useQuery({
     queryKey: ["recipes"],
@@ -54,6 +56,10 @@ const Index = () => {
     toast({ title: "Added!", description: `${items.length} ingredients added to your shopping list.` });
   };
 
+  const handleSchedule = (recipeId: string) => {
+    navigate("/meal-plan", { state: { scheduleRecipeId: recipeId } });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -76,6 +82,7 @@ const Index = () => {
               ingredientCount={recipe.recipe_ingredients?.length ?? 0}
               onViewDetails={setSelectedRecipeId}
               onAddToList={addRecipeToList}
+              onSchedule={handleSchedule}
             />
           ))}
         </section>

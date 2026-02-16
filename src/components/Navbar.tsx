@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, ChefHat } from "lucide-react";
+import { ShoppingCart, ChefHat, CalendarDays } from "lucide-react";
 
 const Navbar = () => {
   const location = useLocation();
@@ -19,6 +19,15 @@ const Navbar = () => {
             }`}
           >
             Recipes
+          </Link>
+          <Link
+            to="/meal-plan"
+            className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
+              location.pathname === "/meal-plan" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <CalendarDays className="h-4 w-4" />
+            Meal Plan
           </Link>
           <Link
             to="/shopping"
