@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, ChefHat, CalendarDays } from "lucide-react";
+import { ShoppingCart, ChefHat, CalendarDays, Search } from "lucide-react";
 
 const Navbar = () => {
   const location = useLocation();
@@ -19,6 +19,15 @@ const Navbar = () => {
             }`}
           >
             Recipes
+          </Link>
+          <Link
+            to="/search"
+            className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
+              location.pathname === "/search" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <Search className="h-4 w-4" />
+            Find Recipes
           </Link>
           <Link
             to="/meal-plan"
