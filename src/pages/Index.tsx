@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,7 +8,8 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ShoppingCart, ChefHat, CalendarPlus, Utensils } from "lucide-react";
+import { ShoppingCart, ChefHat, CalendarPlus, Utensils, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
 function getTodayDayName(): string { return format(new Date(), "EEEE"); }
@@ -22,9 +24,20 @@ function getWeekStart(date: Date): string {
 
 const Index = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const todayName = getTodayDayName();
   const weekStart = getWeekStart(new Date());
+  const [newItem, setNewItem] = useState("");
+
+  const addGroceryItem = async () => {
+    if (!newItem.trim() || !user) return;
+    const { error } = await supabase.from("shopping_list").insert({ ingredient_name: newItem.trim(), user_id: user.id });
+    if (error) { toast({ title: "Error", description: "Failed to add item", variant: "destructive" }); return; }
+    setNewItem("");
+    queryClient.invalidateQueries({ queryKey: ["shopping_list_home"] });
+    queryClient.invalidateQueries({ queryKey: ["shopping_list_count"] });
+  };
 
   const { data: todayMeals = [] } = useQuery({
     queryKey: ["meal_plan_today", weekStart, todayName],
@@ -114,7 +127,13 @@ const Index = () => {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-serif flex items-center gap-2"><ShoppingCart className="h-5 w-5 text-primary" /> Grocery List</h2>
-            <Button variant="outline" size="sm" onClick={() => navigate("/shopping")}>View All{totalCount ? ` (${totalCount})` : ""}</Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate("/shopping")}>View All{totalCount ? ` (${totalCount})` : ""}</Button>
+            </div>
+          </div>
+          <div className="flex gap-2 mb-4">
+            <Input placeholder="Add a grocery item..." value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addGroceryItem()} />
+            <Button onClick={addGroceryItem} size="sm" className="gap-1 shrink-0"><Plus className="h-4 w-4" /> Add</Button>
           </div>
           {shoppingItems.length === 0 ? (
             <Card><CardContent className="py-8 text-center text-muted-foreground"><ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" /><p>Your grocery list is empty.</p></CardContent></Card>
