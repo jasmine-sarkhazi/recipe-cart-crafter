@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, ChefHat } from "lucide-react";
+import { ShoppingCart, ChefHat, BookOpen, Calendar, Search } from "lucide-react";
+
 
 const Navbar = () => {
   const location = useLocation();
@@ -11,28 +12,55 @@ const Navbar = () => {
           <ChefHat className="h-6 w-6 text-primary" />
           <span className="font-serif">Home Pantry</span>
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-5">
           <Link
             to="/"
             className={`text-sm font-medium transition-colors hover:text-primary ${
-            location.pathname === "/" ? "text-primary" : "text-muted-foreground"}`
-            }>
-
+              location.pathname === "/" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            Today
+          </Link>
+          <Link
+            to="/recipes"
+            className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
+              location.pathname === "/recipes" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <BookOpen className="h-4 w-4" />
             Recipes
+          </Link>
+          <Link
+            to="/meal-plan"
+            className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
+              location.pathname === "/meal-plan" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            Plan
+          </Link>
+          <Link
+            to="/search"
+            className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
+              location.pathname === "/search" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <Search className="h-4 w-4" />
+            Find
           </Link>
           <Link
             to="/shopping"
             className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
-            location.pathname === "/shopping" ? "text-primary" : "text-muted-foreground"}`
-            }>
-
+              location.pathname === "/shopping" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
             <ShoppingCart className="h-4 w-4" />
-            Shopping List
+            List
           </Link>
         </div>
       </nav>
-    </header>);
-
+    </header>
+  );
 };
 
 export default Navbar;

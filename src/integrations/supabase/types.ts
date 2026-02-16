@@ -89,6 +89,7 @@ export type Database = {
           image_url: string | null
           instructions: string | null
           name: string
+          source_url: string | null
         }
         Insert: {
           created_at?: string
@@ -97,6 +98,7 @@ export type Database = {
           image_url?: string | null
           instructions?: string | null
           name: string
+          source_url?: string | null
         }
         Update: {
           created_at?: string
@@ -105,6 +107,7 @@ export type Database = {
           image_url?: string | null
           instructions?: string | null
           name?: string
+          source_url?: string | null
         }
         Relationships: []
       }

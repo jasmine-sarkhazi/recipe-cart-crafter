@@ -41,7 +41,8 @@ Deno.serve(async (req) => {
             content: `You are a recipe search assistant. When given a search query, return exactly 6 recipes as a JSON array. Each recipe must have these fields:
 - "name": string (recipe name)
 - "description": string (1-2 sentence description)
-- "instructions": string (step-by-step cooking instructions, each step on a new line)
+- "instructions": string (detailed step-by-step cooking instructions, each step numbered on a new line)
+- "source_url": string (a real URL to a popular recipe website where this or a very similar recipe can be found, e.g. allrecipes.com, foodnetwork.com, seriouseats.com, budgetbytes.com, etc.)
 - "ingredients": array of objects with "ingredient_name" (string), "default_quantity" (number), "default_unit" (string like "cups", "lbs", "oz", "pieces", "tbsp", "tsp", "cloves", "cans")
 
 Return ONLY the JSON array, no markdown, no code fences, no extra text.`,
@@ -67,10 +68,8 @@ Return ONLY the JSON array, no markdown, no code fences, no extra text.`,
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '[]';
 
-    // Parse the JSON from the response
     let recipes;
     try {
-      // Strip potential markdown code fences
       const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       recipes = JSON.parse(cleaned);
     } catch {

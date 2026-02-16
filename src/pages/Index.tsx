@@ -1,105 +1,196 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import RecipeCard from "@/components/RecipeCard";
-import RecipeDetail from "@/components/RecipeDetail";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ShoppingCart, ChefHat, Plus, CalendarPlus, Utensils } from "lucide-react";
+import { format } from "date-fns";
+
+function getTodayDayName(): string {
+  return format(new Date(), "EEEE");
+}
+
+function getWeekStart(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  return d.toISOString().split("T")[0];
+}
 
 const Index = () => {
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const todayName = getTodayDayName();
+  const weekStart = getWeekStart(new Date());
 
-  const { data: recipes = [] } = useQuery({
-    queryKey: ["recipes"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("recipes").select("*, recipe_ingredients(id)");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: selectedRecipe } = useQuery({
-    queryKey: ["recipe", selectedRecipeId],
-    enabled: !!selectedRecipeId,
+  // Today's meals
+  const { data: todayMeals = [] } = useQuery({
+    queryKey: ["meal_plan_today", weekStart, todayName],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("recipes")
-        .select("*, recipe_ingredients(*)")
-        .eq("id", selectedRecipeId!)
-        .single();
+        .from("meal_plan" as any)
+        .select("*, recipes(name, image_url, id)")
+        .eq("week_start", weekStart)
+        .eq("day_of_week", todayName)
+        .order("meal_type");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  // Shopping list (top unchecked items)
+  const { data: shoppingItems = [] } = useQuery({
+    queryKey: ["shopping_list_home"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shopping_list")
+        .select("*")
+        .eq("is_purchased", false)
+        .order("created_at", { ascending: true })
+        .limit(10);
       if (error) throw error;
       return data;
     },
   });
 
-  const addRecipeToList = async (recipeId: string) => {
+  const { data: totalCount } = useQuery({
+    queryKey: ["shopping_list_count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("shopping_list")
+        .select("*", { count: "exact", head: true })
+        .eq("is_purchased", false);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  const togglePurchased = async (id: string, current: boolean) => {
+    await supabase.from("shopping_list").update({ is_purchased: !current }).eq("id", id);
+  };
+
+  const addMealIngredientsToList = async (recipeId: string) => {
     const { data: ingredients, error } = await supabase
       .from("recipe_ingredients")
       .select("*")
       .eq("recipe_id", recipeId);
-    if (error) {
-      toast({ title: "Error", description: "Failed to load ingredients", variant: "destructive" });
-      return;
-    }
+    if (error) return;
     const items = ingredients.map((ing) => ({
       ingredient_name: ing.ingredient_name,
       quantity: ing.default_quantity || 1,
       unit: ing.default_unit || "pieces",
     }));
-    const { error: insertError } = await supabase.from("shopping_list").insert(items);
-    if (insertError) {
-      toast({ title: "Error", description: "Failed to add items", variant: "destructive" });
-      return;
-    }
+    await supabase.from("shopping_list").insert(items);
     toast({ title: "Added!", description: `${items.length} ingredients added to your shopping list.` });
   };
 
-  const handleSchedule = (recipeId: string) => {
-    navigate("/meal-plan", { state: { scheduleRecipeId: recipeId } });
-  };
+  const mealOrder = { breakfast: 0, lunch: 1, dinner: 2 };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
-        <section className="mb-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif mb-3">What's Cooking?</h1>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            Browse recipes and build your grocery list in one place.
-          </p>
+      <main className="container mx-auto px-4 py-8 max-w-3xl">
+        {/* Today header */}
+        <section className="mb-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-serif mb-1">
+            {format(new Date(), "EEEE")}
+          </h1>
+          <p className="text-muted-foreground">{format(new Date(), "MMMM d, yyyy")}</p>
         </section>
 
-        <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {recipes.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              id={recipe.id}
-              name={recipe.name}
-              description={recipe.description}
-              imageUrl={recipe.image_url}
-              ingredientCount={recipe.recipe_ingredients?.length ?? 0}
-              onViewDetails={setSelectedRecipeId}
-              onAddToList={addRecipeToList}
-              onSchedule={handleSchedule}
-            />
-          ))}
+        {/* Today's Meals */}
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-serif flex items-center gap-2">
+              <Utensils className="h-5 w-5 text-primary" /> Today's Meals
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => navigate("/meal-plan")}>
+              <CalendarPlus className="h-4 w-4 mr-1" /> Plan Week
+            </Button>
+          </div>
+
+          {todayMeals.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <ChefHat className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No meals planned for today.</p>
+                <Button variant="link" onClick={() => navigate("/meal-plan")} className="mt-1">
+                  Add meals to your plan →
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {todayMeals
+                .sort((a: any, b: any) => (mealOrder[a.meal_type as keyof typeof mealOrder] ?? 9) - (mealOrder[b.meal_type as keyof typeof mealOrder] ?? 9))
+                .map((meal: any) => (
+                <Card key={meal.id} className="relative overflow-hidden">
+                  <CardHeader className="pb-1 pt-3 px-4">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{meal.meal_type}</span>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-3">
+                    <h3 className="font-serif text-lg">{meal.recipes?.name}</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2 gap-1 text-xs"
+                      onClick={() => addMealIngredientsToList(meal.recipes?.id)}
+                    >
+                      <ShoppingCart className="h-3 w-3" /> Add ingredients
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Grocery List */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-serif flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" /> Grocery List
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => navigate("/shopping")}>
+              View All{totalCount ? ` (${totalCount})` : ""}
+            </Button>
+          </div>
+
+          {shoppingItems.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Your grocery list is empty.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="divide-y py-0">
+                {shoppingItems.map((item) => (
+                  <label
+                    key={item.id}
+                    className="flex items-center gap-3 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                  >
+                    <Checkbox
+                      checked={item.is_purchased}
+                      onCheckedChange={() => togglePurchased(item.id, item.is_purchased)}
+                    />
+                    <span className={`flex-1 text-sm ${item.is_purchased ? "line-through text-muted-foreground" : ""}`}>
+                      {item.ingredient_name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {item.quantity} {item.unit}
+                    </span>
+                  </label>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </section>
       </main>
-
-      <RecipeDetail
-        open={!!selectedRecipeId}
-        onOpenChange={(open) => !open && setSelectedRecipeId(null)}
-        recipe={selectedRecipe ?? null}
-        ingredients={selectedRecipe?.recipe_ingredients ?? []}
-        onAddToList={() => {
-          if (selectedRecipeId) {
-            addRecipeToList(selectedRecipeId);
-            setSelectedRecipeId(null);
-          }
-        }}
-      />
     </div>
   );
 };
